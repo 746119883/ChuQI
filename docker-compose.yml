@@ -1,0 +1,37 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: chuqi-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: chuqi
+      POSTGRES_USER: chuqi
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      TZ: Asia/Shanghai
+    volumes:
+      - ./pgdata:/var/lib/postgresql/data
+    ports:
+      - "127.0.0.1:5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U chuqi"]
+      interval: 5s
+      retries: 10
+
+  django:
+    build: .
+    container_name: chuqi-django
+    restart: unless-stopped
+    command: python manage.py runserver 0.0.0.0:8000
+    environment:
+      DATABASE_URL: postgres://chuqi:${DB_PASSWORD}@postgres:5432/chuqi
+      DJANGO_SECRET_KEY: ${DJANGO_SECRET_KEY}
+      DJANGO_DEBUG: "True"
+      DJANGO_ALLOWED_HOSTS: "*"
+      TZ: Asia/Shanghai
+    volumes:
+      - ./app:/app
+    ports:
+      - "8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy

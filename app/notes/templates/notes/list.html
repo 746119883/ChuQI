@@ -1,0 +1,76 @@
+{% extends "notes/base.html" %}
+
+{% block title %}笔记列表 · 初七{% endblock %}
+
+{% block extra_head %}
+<style>
+    .page-title {
+        font-size: 28px;
+        font-weight: 600;
+        margin-bottom: 24px;
+    }
+    .note-card {
+        background: #fff;
+        border-radius: 12px;
+        padding: 20px 24px;
+        margin-bottom: 12px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+        transition: transform .15s, box-shadow .15s;
+    }
+    .note-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    }
+    .note-card a {
+        color: #1d1d1f;
+        text-decoration: none;
+        display: block;
+    }
+    .note-card h2 {
+        font-size: 18px;
+        font-weight: 600;
+        margin-bottom: 8px;
+    }
+    .note-card .preview {
+        color: #515154;
+        font-size: 14px;
+        margin-bottom: 12px;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+    .note-card .meta {
+        font-size: 13px;
+        color: #86868b;
+    }
+    .empty {
+        text-align: center;
+        color: #86868b;
+        padding: 80px 0;
+    }
+    .empty a { color: #06c; text-decoration: none; }
+</style>
+{% endblock %}
+
+{% block content %}
+    <h1 class="page-title">家里的笔记</h1>
+
+    {% for note in notes %}
+        <article class="note-card">
+            <a href="{% url 'notes:detail' note.pk %}">
+                <h2>{{ note.title }}</h2>
+                {% if note.content %}
+                    <p class="preview">{{ note.content|truncatechars:80 }}</p>
+                {% endif %}
+                <div class="meta">
+                    {{ note.author.username }} · {{ note.created_at|date:"Y-m-d H:i" }}
+                </div>
+            </a>
+        </article>
+    {% empty %}
+        <div class="empty">
+            <p>还没有笔记。<a href="/admin/notes/note/add/">去写第一条</a></p>
+        </div>
+    {% endfor %}
+{% endblock %}

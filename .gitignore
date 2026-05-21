@@ -1,0 +1,11 @@
+.env
+pgdata/
+__pycache__/
+*.pyc
+.venv/
+.DS_Store
+media/
+staticfiles/
+.idea/
+db.sqlite3
+*.log
