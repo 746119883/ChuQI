@@ -1,6 +1,6 @@
 from itertools import chain
 
-from django.db.models import F
+from django.db.models import F, Count
 from django.db.models.functions import Coalesce
 from rest_framework import viewsets, permissions, status
 from rest_framework.decorators import action, api_view, permission_classes
@@ -29,7 +29,10 @@ class AlbumViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticated, IsOwnerOrReadOnly]
 
     def get_queryset(self):
-        return Album.objects.select_related('owner', 'cover_photo').all()
+        return Album.objects.select_related('owner', 'cover_photo').annotate(
+            _photo_count=Count('photos', distinct=True),
+            _video_count=Count('videos', distinct=True),
+        )
 
 
 class PhotoViewSet(viewsets.ModelViewSet):

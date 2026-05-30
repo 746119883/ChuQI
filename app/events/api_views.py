@@ -2,12 +2,23 @@ from datetime import date as date_cls, datetime, timedelta
 
 from django.db.models import Q
 from rest_framework import viewsets, permissions
-from rest_framework.decorators import action, api_view, permission_classes
+from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
+
+from accounts.models import Profile
+from accounts.serializers import UserSerializer
 
 from .models import Event
 from .serializers import EventSerializer
-from .utils import expand_for_range, expand_for_upcoming, gregorian_to_lunar_str
+from .utils import (
+    expand_for_range,
+    expand_for_upcoming,
+    gregorian_to_lunar_str,
+    profile_birthday_occurrences,
+)
+
+# 生日卡片默认颜色（粉）
+BIRTHDAY_COLOR = '#ec4899'
 
 
 class IsOwnerOrFamilyRead(permissions.BasePermission):
@@ -55,11 +66,8 @@ def occurrences(request):
     if end < start:
         end = start
 
-    events = Event.objects.select_related('owner').filter(
-        Q(visibility='family') | Q(owner=user),
-    )
-    rows = expand_for_range(events, start, end)
-    return Response(_serialize_rows(rows, request))
+    rows = _collect(user, start, end, request)
+    return Response(rows)
 
 
 @api_view(['GET'])
@@ -73,19 +81,66 @@ def upcoming(request):
         days = 60
     days = max(1, min(days, 365))
 
+    today = date_cls.today()
+    rows = _collect(user, today, today + timedelta(days=days), request)
+    return Response(rows)
+
+
+def _collect(user, start, end, request):
+    """汇总 [start, end] 内的真实 Event + 家庭成员资料生日，统一序列化、按日期升序。"""
+    # 1) 真实事件
     events = Event.objects.select_related('owner').filter(
         Q(visibility='family') | Q(owner=user),
     )
-    rows = expand_for_upcoming(events, days)
-    return Response(_serialize_rows(rows, request))
+    combined = []
+    for d, ev in expand_for_range(events, start, end):
+        combined.append((
+            d,
+            {
+                'date': d.isoformat(),
+                'lunar_label': gregorian_to_lunar_str(d),
+                'event': EventSerializer(ev, context={'request': request}).data,
+            },
+        ))
+
+    # 2) 家庭成员资料里的生日（自动生成，不可删/改，去本人资料里改）
+    profiles = (
+        Profile.objects
+        .select_related('user')
+        .filter(birthday__isnull=False, user__is_active=True)
+    )
+    for d, profile in profile_birthday_occurrences(profiles, start, end):
+        combined.append((d, _serialize_profile_birthday(d, profile, request)))
+
+    combined.sort(key=lambda r: r[0])
+    return [payload for _, payload in combined]
 
 
-def _serialize_rows(rows, request):
-    return [
-        {
-            'date': d.isoformat(),
-            'lunar_label': gregorian_to_lunar_str(d),
-            'event': EventSerializer(ev, context={'request': request}).data,
-        }
-        for d, ev in rows
-    ]
+def _serialize_profile_birthday(d, profile, request):
+    u = profile.user
+    display = profile.nickname or u.username
+    return {
+        'date': d.isoformat(),
+        'lunar_label': gregorian_to_lunar_str(d),
+        'event': {
+            'id': f'profile-{u.id}',
+            'owner': UserSerializer(u, context={'request': request}).data,
+            'title': f'{display} 生日',
+            'description': '',
+            'event_type': 'birthday',
+            'color': BIRTHDAY_COLOR,
+            'visibility': 'family',
+            'is_lunar': profile.birthday_is_lunar,
+            'date_year': profile.birthday.year,
+            'date_month': profile.birthday.month,
+            'date_day': profile.birthday.day,
+            'all_day': True,
+            'start_time': None,
+            'end_time': None,
+            'yearly_recurring': True,
+            'remind_days_before': None,
+            'created_at': None,
+            'updated_at': None,
+            'is_profile_birthday': True,
+        },
+    }

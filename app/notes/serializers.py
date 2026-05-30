@@ -1,12 +1,12 @@
 from rest_framework import serializers
-from django.contrib.auth.models import User
+
+from accounts.serializers import UserSerializer
+
 from .models import Note
 
 
-class UserSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = User
-        fields = ('id', 'username')
+# 兼容旧导入：其他 app 使用 `from notes.serializers import UserSerializer`
+__all__ = ['UserSerializer', 'NoteSerializer']
 
 
 class NoteSerializer(serializers.ModelSerializer):

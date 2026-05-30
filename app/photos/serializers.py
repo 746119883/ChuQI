@@ -92,10 +92,13 @@ class AlbumSerializer(serializers.ModelSerializer):
         return None
 
     def get_photo_count(self, obj):
-        return obj.photos.count()
+        # 列表接口已 annotate;单对象场景回退到查询
+        c = getattr(obj, '_photo_count', None)
+        return c if c is not None else obj.photos.count()
 
     def get_video_count(self, obj):
-        return obj.videos.count()
+        c = getattr(obj, '_video_count', None)
+        return c if c is not None else obj.videos.count()
 
     def create(self, validated_data):
         validated_data['owner'] = self.context['request'].user

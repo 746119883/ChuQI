@@ -1,4 +1,4 @@
-from django.db.models import Q
+from django.db.models import Q, Count
 from django.utils import timezone
 from rest_framework import viewsets, permissions
 from rest_framework.response import Response
@@ -24,6 +24,10 @@ class TaskListViewSet(viewsets.ModelViewSet):
         return (
             TaskList.objects
             .select_related('owner')
+            .annotate(
+                _total=Count('tasks', distinct=True),
+                _done=Count('tasks', filter=Q(tasks__completed=True), distinct=True),
+            )
             .filter(Q(is_shared=True) | Q(owner=user))
         )
 

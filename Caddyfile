@@ -1,0 +1,23 @@
+# Caddy 反代:监听 80,前端静态 + 后端 API 同一域名
+:80 {
+    encode gzip
+
+    # 后端接口 / admin / 媒体文件 → Django
+    @django {
+        path /api/* /admin/* /media/* /static/*
+    }
+    handle @django {
+        reverse_proxy django:8000
+    }
+
+    # 其他全部走前端 SPA (React Router 路径回退到 index.html)
+    handle {
+        root * /srv
+        try_files {path} /index.html
+        file_server
+    }
+
+    request_body {
+        max_size 200MB
+    }
+}

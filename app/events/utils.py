@@ -76,3 +76,29 @@ def expand_for_range(events, start: date, end: date):
             rows.append((d, ev))
     rows.sort(key=lambda r: r[0])
     return rows
+
+
+class _SyntheticBirthday:
+    """让 Profile 生日复用 event_occurrences_in_range —— 只需 quack 出这几个属性。"""
+    def __init__(self, birthday, is_lunar):
+        self.yearly_recurring = True
+        self.date_year = birthday.year
+        self.date_month = birthday.month
+        self.date_day = birthday.day
+        self.is_lunar = is_lunar
+
+
+def profile_birthday_occurrences(profiles, start: date, end: date):
+    """根据家庭成员资料里的生日，生成 [start, end] 内的 occurrences。
+
+    profiles: 可迭代的 Profile（需带 .user / .birthday / .birthday_is_lunar）。
+    返回 list of (date, profile)。
+    """
+    rows = []
+    for profile in profiles:
+        if not profile.birthday:
+            continue
+        synth = _SyntheticBirthday(profile.birthday, profile.birthday_is_lunar)
+        for d in event_occurrences_in_range(synth, start, end):
+            rows.append((d, profile))
+    return rows

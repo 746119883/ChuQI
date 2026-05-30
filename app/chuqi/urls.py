@@ -5,12 +5,21 @@ from django.urls import path, include
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    path('api/', include('accounts.api_urls')),
+    path('api/', include('immich.api_urls')),
     path('api/', include('notes.api_urls')),
     path('api/', include('feed.api_urls')),
     path('api/', include('photos.api_urls')),
     path('api/', include('tasks.api_urls')),
     path('api/', include('events.api_urls')),
     path('api/', include('vault.api_urls')),
+    path('api/', include('recipes.api_urls')),
+    path('api/', include('ledger.api_urls')),
+    path('api/', include('trips.api_urls')),
+    path('api/', include('milestones.api_urls')),
+    path('api/', include('notifications.api_urls')),
+    path('api/', include('meals.api_urls')),
+    path('api/', include('stories.api_urls')),
     # 旧 SSR 路由保留
     path('notes/', include('notes.urls')),
 ]

@@ -36,12 +36,21 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'rest_framework',
     'corsheaders',
+    'accounts',
+    'immich',
     'notes',
     'feed',
     'photos',
     'tasks',
     'events',
     'vault',
+    'recipes',
+    'ledger',
+    'trips',
+    'milestones',
+    'notifications',
+    'meals',
+    'stories',
 ]
 
 MIDDLEWARE = [
@@ -61,7 +70,7 @@ REST_FRAMEWORK = {
         'rest_framework_simplejwt.authentication.JWTAuthentication',
     ),
     'DEFAULT_PERMISSION_CLASSES': (
-        'rest_framework.permissions.IsAuthenticated',
+        'accounts.permissions.IsFamilyMember',
     ),
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
     'PAGE_SIZE': 20,
@@ -110,6 +119,11 @@ WSGI_APPLICATION = 'chuqi.wsgi.application'
 DATABASES = {
     'default': env.db('DATABASE_URL'),
 }
+
+# ---- Immich 集成 ----
+IMMICH_URL = env('IMMICH_URL', default='')
+IMMICH_API_KEY = env('IMMICH_API_KEY', default='')
+IMMICH_ENABLED = bool(IMMICH_URL and IMMICH_API_KEY)
 
 
 # Password validation

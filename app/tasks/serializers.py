@@ -44,10 +44,12 @@ class TaskListSerializer(serializers.ModelSerializer):
         )
 
     def get_total(self, obj):
-        return obj.tasks.count()
+        c = getattr(obj, '_total', None)
+        return c if c is not None else obj.tasks.count()
 
     def get_done(self, obj):
-        return obj.tasks.filter(completed=True).count()
+        c = getattr(obj, '_done', None)
+        return c if c is not None else obj.tasks.filter(completed=True).count()
 
     def create(self, validated_data):
         validated_data['owner'] = self.context['request'].user

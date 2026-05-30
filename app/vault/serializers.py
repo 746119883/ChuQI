@@ -1,3 +1,4 @@
+from django.utils import timezone
 from rest_framework import serializers
 from .models import Folder, File
 from notes.serializers import UserSerializer
@@ -28,10 +29,11 @@ class FolderSerializer(serializers.ModelSerializer):
         )
 
     def get_item_count(self, obj):
-        return obj.files.count() + obj.children.count()
+        # annotate 已在 get_queryset 里注入 file_count / child_count，直接取
+        return getattr(obj, 'file_count', 0) + getattr(obj, 'child_count', 0)
 
     def get_ancestors(self, obj):
-        # 不含自己,只到 parent
+        # 不含自己，只到 parent；parent 已通过 select_related 预加载
         path = []
         node = obj.parent
         depth = 0
@@ -49,6 +51,7 @@ class FolderSerializer(serializers.ModelSerializer):
 class FileSerializer(serializers.ModelSerializer):
     uploader = UserSerializer(read_only=True)
     file = serializers.FileField(use_url=True, read_only=True)
+    is_expired = serializers.SerializerMethodField()
 
     class Meta:
         model = File
@@ -56,10 +59,15 @@ class FileSerializer(serializers.ModelSerializer):
             'id', 'uploader', 'folder',
             'file', 'name', 'size_bytes', 'mime_type',
             'is_important', 'visibility',
-            'description', 'expires_at',
+            'description', 'expires_at', 'is_expired',
             'created_at', 'updated_at',
         )
         read_only_fields = (
             'id', 'uploader', 'file', 'size_bytes', 'mime_type',
-            'created_at', 'updated_at',
+            'is_expired', 'created_at', 'updated_at',
         )
+
+    def get_is_expired(self, obj):
+        if obj.expires_at is None:
+            return False
+        return obj.expires_at < timezone.now().date()

@@ -27,11 +27,31 @@ services:
       DJANGO_SECRET_KEY: ${DJANGO_SECRET_KEY}
       DJANGO_DEBUG: "True"
       DJANGO_ALLOWED_HOSTS: "*"
+      IMMICH_URL: ${IMMICH_URL}
+      IMMICH_API_KEY: ${IMMICH_API_KEY}
       TZ: Asia/Shanghai
     volumes:
       - ./app:/app
     ports:
-      - "8000:8000"
+      - "127.0.0.1:8000:8000"   # 改成只监听本地;外部走 Caddy 进
     depends_on:
       postgres:
         condition: service_healthy
+
+  caddy:
+    image: caddy:2
+    container_name: chuqi-caddy
+    restart: unless-stopped
+    ports:
+      - "8080:80"   # 外部 8080 → 容器内 Caddy 监听 80,避开 macOS 系统 Apache
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile
+      - ../ChuQI-Client/dist:/srv:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - django
+
+volumes:
+  caddy_data:
+  caddy_config:
