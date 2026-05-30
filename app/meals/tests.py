@@ -82,6 +82,23 @@ class RollTests(MealsTestBase):
         self.assertEqual(resp.data['pool_size'], 1)
         self.assertEqual(resp.data['main']['name'], '公开菜')
 
+    def test_home_option_included_in_recipe_scope(self):
+        """在家做(source=recipe)应包含 kind=home 的就餐选项,而非只有菜谱。"""
+        Recipe.objects.create(author=self.alice, title='番茄炒蛋', visibility='family')
+        DiningOption.objects.create(created_by=self.alice, name='妈妈的红烧肉', kind='home')
+        resp = self._roll(source='recipe', exclude_days=0, count=10)
+        names = {c['name'] for c in [resp.data['main']] + resp.data['alternatives']}
+        self.assertEqual(resp.data['pool_size'], 2)
+        self.assertEqual(names, {'番茄炒蛋', '妈妈的红烧肉'})
+
+    def test_home_option_not_in_takeout_scope(self):
+        """在家做的选项不应出现在外卖摇号里。"""
+        DiningOption.objects.create(created_by=self.alice, name='妈妈的红烧肉', kind='home')
+        DiningOption.objects.create(created_by=self.alice, name='麦当劳', kind='takeout')
+        resp = self._roll(source='option', kind='takeout', exclude_days=0)
+        self.assertEqual(resp.data['pool_size'], 1)
+        self.assertEqual(resp.data['main']['name'], '麦当劳')
+
 
 class MealLogTests(MealsTestBase):
     def test_requires_a_source(self):

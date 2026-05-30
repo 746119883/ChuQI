@@ -127,11 +127,18 @@ class MealLogViewSet(viewsets.ModelViewSet):
                     1,
                 ))
 
-        if source in ('all', 'option'):
+        # 就餐选项纳入规则:
+        #   all     -> 全部 kind
+        #   option  -> 按 kind 过滤(外卖/出去吃)
+        #   recipe  -> 仅 kind=home(在家做),与菜谱一起进"在家做"池
+        include_options = source in ('all', 'option', 'recipe')
+        if include_options:
             options = DiningOption.objects.filter(is_active=True).exclude(
                 id__in=recent_option_ids,
             )
-            if kind:
+            if source == 'recipe':
+                options = options.filter(kind='home')
+            elif kind:
                 options = options.filter(kind=kind)
             for o in options:
                 pool.append((
