@@ -10,9 +10,16 @@ VERB_CHOICES = [
     ('birthday', '生日提醒'),
     ('event', '日历提醒'),
     ('expiry', '文件到期提醒'),
+    # 健康提醒类
+    ('health_checkup', '体检提醒'),
+    ('health_vaccine', '疫苗提醒'),
+    ('health_followup', '复诊提醒'),
 ]
 
-REMINDER_VERBS = {'birthday', 'event', 'expiry'}
+REMINDER_VERBS = {
+    'birthday', 'event', 'expiry',
+    'health_checkup', 'health_vaccine', 'health_followup',
+}
 
 
 class Notification(models.Model):

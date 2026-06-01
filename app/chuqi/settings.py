@@ -51,6 +51,7 @@ INSTALLED_APPS = [
     'notifications',
     'meals',
     'stories',
+    'health',
 ]
 
 MIDDLEWARE = [

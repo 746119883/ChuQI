@@ -20,6 +20,7 @@ urlpatterns = [
     path('api/', include('notifications.api_urls')),
     path('api/', include('meals.api_urls')),
     path('api/', include('stories.api_urls')),
+    path('api/', include('health.api_urls')),
     # 旧 SSR 路由保留
     path('notes/', include('notes.urls')),
 ]
