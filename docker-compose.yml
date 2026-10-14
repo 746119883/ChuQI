@@ -37,6 +37,24 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+    labels:
+      # 每日 00:00 发送健康提醒(体检/疫苗/复诊 到期与逾期),由 scheduler 触发
+      ofelia.enabled: "true"
+      ofelia.job-exec.health-reminders.schedule: "0 0 0 * * *"
+      ofelia.job-exec.health-reminders.command: "python manage.py health_send_reminders"
+
+  # 轻量 docker 任务调度器,按 django 容器上的 ofelia.* 标签定时 exec
+  scheduler:
+    image: mcuadros/ofelia:latest
+    container_name: chuqi-scheduler
+    restart: unless-stopped
+    command: daemon --docker
+    environment:
+      TZ: Asia/Shanghai
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    depends_on:
+      - django
 
   caddy:
     image: caddy:2
